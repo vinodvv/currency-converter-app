@@ -40,3 +40,21 @@ currency-converter/
 ├── README.md
 └── LICENSE
 ```
+
+## 🔧 Command-Line Usage
+
+### Run the script directly from the terminal
+```bash
+python currency_converter.py --base USD --target EUR
+```
+
+### Options
+* --base, -b: Base currency (default: GBP)
+* --target, -t: Target currency (default: INR)
+* --output, -o: Output CSV path (default: output/exchange_rates.csv)
+* --dry-run: Print exchange rate without saving
+
+### Example
+```bash
+python currency_converter.py -b EUR -t INR --dry-run
+```
