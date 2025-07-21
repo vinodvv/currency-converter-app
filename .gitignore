@@ -1,0 +1,27 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+.venv/
+.env/
+*.env
+
+# Pycharm project files
+.idea
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Output or log files
+output/
+*.log
+
+# Ignore secrets
+*.key
+*.pem
+config.json
+.env.*
