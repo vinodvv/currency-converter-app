@@ -2,14 +2,29 @@ import requests
 import csv
 import os
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load .env values if present
+load_dotenv()
+
+# paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_FILE = os.path.join(BASE_DIR, "log.txt")
+OUTPUT_FILENAME = os.path.join(BASE_DIR, "output", "gbp_inr_rates.csv")
+
+# Logging helper
+def log(message):
+    with open(LOG_FILE, "a") as file:
+        file.write(f"{datetime.now()} - {message}\n")
+
 
 # --- Configuration ---
 API_KEY = os.getenv("API_KEY")
 
-if API_KEY:
-    print("API Key found.")
-else:
-    print("API_KEY environment variable not set.")
+if not API_KEY:
+    log("❌ ERROR: API KEY environment variable not set. Script stopped.")
+    exit(1)
+
 
 BASE_CURRENCY = "GBP"
 TARGET_CURRENCY = "INR"
@@ -36,7 +51,8 @@ def get_gbp_inr_rate(api_url):
 
         rate = data["conversion_rates"].get(TARGET_CURRENCY)
         if rate is None:
-            print(f"Error: {TARGET_CURRENCY} not found in conversion rates.")
+            # print(f"Error: {TARGET_CURRENCY} not found in conversion rates.")
+            log(f"❌ ERROR: {TARGET_CURRENCY} not found in response.")
             return None
 
         # Extracting and reformatting the date to 'DD-MM-YYYY'
@@ -57,15 +73,17 @@ def get_gbp_inr_rate(api_url):
 
         return rate, formatted_date
 
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching data from API: {e}")
-        return None
-    except KeyError as e:
-        print(f"Error parsing API response: Missing key {e}")
-        return None
-    except ValueError as e:
-        print(f"Error processing date or JSON: {e}")
-        return None
+    # except requests.exceptions.RequestException as e:
+    #     print(f"Error fetching data from API: {e}")
+    #     return None
+    # except KeyError as e:
+    #     print(f"Error parsing API response: Missing key {e}")
+    #     return None
+    # except ValueError as e:
+    #     print(f"Error processing date or JSON: {e}")
+    #     return None
+    except Exception as e:
+        log(f"❌ ERROR: Fetching API data: {e}")
 
 
 def write_to_csv(filename, date, rate):
@@ -79,27 +97,32 @@ def write_to_csv(filename, date, rate):
         rate: The conversion rate.
     """
     # Ensure the output directory exists
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-
-    file_exists = os.path.exists(filename)
-
     try:
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+        file_exists = os.path.exists(filename)
+
         with open(filename, "a", newline="") as file:
             writer = csv.writer(file)
             if not file_exists:
                 writer.writerow(["Date", f"{BASE_CURRENCY}_{TARGET_CURRENCY}"])
             writer.writerow([date, rate])
-        print(f"Successfully wrote {BASE_CURRENCY}/{TARGET_CURRENCY} rate ({rate}) for {date} to {filename}")
-    except IOError as e:
-        print(f"Error writing to CSV file {filename}: {e}")
+        # print(f"Successfully wrote {BASE_CURRENCY}/{TARGET_CURRENCY} rate ({rate}) for {date} to {filename}")
+        log(f"CSV updated successfully. {BASE_CURRENCY}/{TARGET_CURRENCY} rate ({rate}) for {date} to {filename}")
+    # except IOError as e:
+    #     print(f"Error writing to CSV file {filename}: {e}")
+    except Exception as e:
+        log(f"❌ ERROR writing CSV: {e}")
 
 
 # --- Main execution ---
 if __name__ == "__main__":
+    log("----- Script started -----")
     gbp_inr_data = get_gbp_inr_rate(API_URL)
 
     if gbp_inr_data:
         rate, date = gbp_inr_data
         write_to_csv(OUTPUT_FILENAME, date, rate)
     else:
-        print("Failed to retrieve GBP to INR conversion rate. CSV not updated.")
+        # print("Failed to retrieve GBP to INR conversion rate. CSV not updated.")
+        log("❌ No data retrieved - CSV not updated.")
